@@ -2,9 +2,36 @@ define(function(require, exports, module) {
   var Surface = require('famous/core/Surface');
   var Modifier = require('famous/core/Modifier');
   var Scrollview = require('famous/views/Scrollview');
-  //var View = require('famous/core/View');
   var SequentialLayout = require('famous/views/SequentialLayout');
   var ContainerSurface = require('famous/surfaces/ContainerSurface');
+
+  Scrollview.prototype.getActiveIndex = function() {
+    var direction = this.options.direction;
+
+    var renderables = this._node._.array;
+    var parent = renderables[0]._currTarget.parentNode;
+    var temp = parent.style['-webkit-transform'].split(',');
+    var parentOffset = parseInt(temp[temp.length - (direction === 0 ? 4 : 3)].trim());
+
+    var offsets = renderables.map(function(r) {
+      return r._matrix[direction === 0 ? 12 : 13] + parentOffset;
+    });
+
+    var index;
+    var minOffset = Infinity;
+    for (var i = 0; i < offsets.length; i++) {
+      if (Math.abs(offsets[i]) < minOffset) {
+        minOffset = Math.abs(offsets[i]);
+        index = i;
+      }
+    }
+    return index;
+  };
+
+  Scrollview.prototype.getActiveContent = function() {
+    var index = this.getActiveIndex();
+    return this._node._.array[index].getContent();
+  };
 
   /**
    * @class Picker
@@ -28,10 +55,10 @@ define(function(require, exports, module) {
     }));
     container.add(scroll);
 
+    // TODO: update Day for Year & Month
+    // TODO: sometimes the index is not correct
     scroll.on('pageChange', function() {
-      // TODO: update Day for Year & Month
-      var s = scroll._node.get();
-      window.console.log('current index is: ' + s.getContent());
+      window.console.log(scroll.getActiveContent());
     });
 
     container.scroll = scroll;
@@ -54,13 +81,15 @@ define(function(require, exports, module) {
     });
     var layout = new SequentialLayout({ direction: 0 });
 
-    var years = [1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999];
-    var months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12];
-    var days = [];
+    var years = [null, null, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, null, null];
+    var months = [null, null, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, null, null];
+    var days = [null, null];
 
     for (var i = 0; i < 31; i++) {
       days.push(i+1);
     }
+    days.push(null);
+    days.push(null);
 
     var yearPicker = new Picker(years, this.width/3, this.height);
     var monthPicker = new Picker(months, this.width/3, this.height);
