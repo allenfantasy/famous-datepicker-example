@@ -5,6 +5,10 @@ define(function(require, exports, module) {
   var SequentialLayout = require('famous/views/SequentialLayout');
   var ContainerSurface = require('famous/surfaces/ContainerSurface');
 
+  // TODO: options manager for Datepicker & Picker
+  // TODO: UI Interface
+  // TODO: refactor events
+
   Scrollview.prototype.getActiveIndex = function() {
     var direction = this.options.direction;
 
@@ -25,7 +29,6 @@ define(function(require, exports, module) {
   };
 
   Scrollview.prototype.getActiveContent = function(offset) {
-    window.console.log(offset);
     var index = this.getActiveIndex();
     return this._node._.array[index + offset].getContent();
   };
@@ -40,7 +43,6 @@ define(function(require, exports, module) {
 
     this.options = {};
 
-    // TODO: options manager
     this.width = (options.size && options.size.length) ? options.size[0] : 200;
     this.height = (options.size && options.size.length) ? options.size[1] : 300;
     this.scroll = options.scroll ? options.scroll : { direction: 1 };
@@ -52,9 +54,19 @@ define(function(require, exports, module) {
     this.options.year = options.year ? options.year : _getDefaultYearRange();
 
     var container = new ContainerSurface({
-      size: [this.width, this.height]
+      size: [this.width, this.height],
+      properties: {
+        background: '-webkit-radial-gradient(50%, ' + this.width + 'px ' + (this.height/this.range) + 'px' + ', white 50%, #eee 70%, #ccc 95%)'
+      }
     });
     var layout = new SequentialLayout({ direction: 0 });
+
+    var mask = new Surface({
+      size: [this.width, this.height/this.range],
+      properties: {
+        border: '1px solid #ccc'
+      }
+    });
 
     var years = _getYDMItems(this.options.year.start, this.options.year.end, this.gap);
     var months = _getYDMItems(1, 12, this.gap);
@@ -68,10 +80,7 @@ define(function(require, exports, module) {
     this.monthPicker = new Picker(months, this.width/3, this.height, this.range);
     this.dayPicker = new Picker(days, this.width/3, this.height, this.range);
 
-    window.yearPicker = this.yearPicker;
-    window.monthPicker = this.monthPicker;
-    window.dayPicker = this.dayPicker;
-    window.datePicker = this;
+    //window.datePicker = this;
 
     var surfaces = [this.yearPicker, this.monthPicker, this.dayPicker].map(function(picker) {
       return picker.container;
@@ -81,15 +90,18 @@ define(function(require, exports, module) {
     container.add(new Modifier({
       size: [this.width, this.height]
     })).add(layout);
+    container.add(new Modifier({
+      origin: [.5, .5],
+      align: [.5, .5]
+    })).add(mask);
 
     // setup events
-    // TODO: refactor
     this.yearPicker.onUpdate(function() {
       this._year = this.yearPicker.getValue();
 
       var numOfDays = _getDays(this.yearPicker.getValue(), this.monthPicker.getValue());
       this.dayPicker.update(_getYDMItems(1, numOfDays, this.gap));
-      window.alert('你选择了: ' + this.getDate());
+      //window.alert('你选择了: ' + this.getDate());
     }.bind(this));
 
     this.monthPicker.onUpdate(function() {
@@ -97,12 +109,12 @@ define(function(require, exports, module) {
 
       var numOfDays = _getDays(this.yearPicker.getValue(), this.monthPicker.getValue());
       this.dayPicker.update(_getYDMItems(1, numOfDays, this.gap));
-      window.alert('你选择了: ' + this.getDate());
+      //window.alert('你选择了: ' + this.getDate());
     }.bind(this));
 
     this.dayPicker.onUpdate(function() {
       this._day = this.dayPicker.getValue();
-      window.alert('你选择了: ' + this.getDate());
+      //window.alert('你选择了: ' + this.getDate());
     }.bind(this));
 
     return container;
@@ -118,9 +130,8 @@ define(function(require, exports, module) {
       }
     });
 
-    var scroll = new Scrollview({ direction: 1, paginated: true, margin: 10000 });
+    var scroll = new Scrollview({ direction: 1, paginated: true, margin: 10000, pageDamp: 1 });
 
-    // TODO: options manager
     this.width = width;
     this.height = height;
     this.range = range;
