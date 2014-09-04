@@ -9,12 +9,17 @@ define(function(require, exports, module) {
     var direction = this.options.direction;
 
     var renderables = this._node._.array;
-    var parent = renderables[0]._currTarget.parentNode;
-    var temp = parent.style['-webkit-transform'].split(',');
-    var parentOffset = parseInt(temp[temp.length - (direction === 0 ? 4 : 3)].trim());
+    //var parent = renderables[0]._currTarget.parentNode;
+    //var temp = parent.style['-webkit-transform'].split(',');
+    /*var parentOffset = parseInt(temp[temp.length - (direction === 0 ? 4 : 3)].trim());
+    if (parentOffset !== 0) {
+      parentOffset = (Math.floor(Math.abs(parentOffset) / 30) + 1) * -30;
+    }*/
 
     var offsets = renderables.map(function(r) {
-      return r._matrix[direction === 0 ? 12 : 13] + parentOffset;
+      //return r._matrix[direction === 0 ? 12 : 13] + (parentOffset ? -30: 0);
+      //return r._matrix[direction === 0 ? 12 : 13] + parentOffset;
+      return r._matrix[direction === 0 ? 12 : 13];
     });
 
     var index;
@@ -30,7 +35,7 @@ define(function(require, exports, module) {
 
   Scrollview.prototype.getActiveContent = function() {
     var index = this.getActiveIndex();
-    return this._node._.array[index].getContent();
+    return this._node._.array[index + 2].getContent();
   };
 
   /**
@@ -58,7 +63,8 @@ define(function(require, exports, module) {
     // TODO: update Day for Year & Month
     // TODO: sometimes the index is not correct
     scroll.on('pageChange', function() {
-      window.console.log(scroll.getActiveContent());
+      window.console.log('activeContent: ' + scroll.getActiveContent());
+      window.console.log('===========');
     });
 
     container.scroll = scroll;
