@@ -15,8 +15,11 @@ define(function(require, exports, module) {
     if (parentOffset !== 0) {
       parentOffset = (Math.floor(Math.abs(parentOffset) / 30) + 1) * -30;
     }*/
+    //debugger;
 
-    var offsets = renderables.map(function(r) {
+    var offsets = renderables.map(function(r, index, array) {
+      window.console.log(index);
+      window.console.dir(r);
       //return r._matrix[direction === 0 ? 12 : 13] + (parentOffset ? -30: 0);
       //return r._matrix[direction === 0 ? 12 : 13] + parentOffset;
       return r._matrix[direction === 0 ? 12 : 13];
@@ -39,12 +42,86 @@ define(function(require, exports, module) {
   };
 
   /**
-   * @class Picker
+   * @class Datepicker
    * @constructor
-   * @private
    *
    */
-  function Picker(selections, width, height) {
+  function Datepicker(options) {
+    var Picker = this.constructor.Picker;
+
+    this.options = {};
+
+    // TODO: options manager
+    this.width = (options.size && options.size.length) ? options.size[0] : 200;
+    this.height = (options.size && options.size.length) ? options.size[1] : 300;
+    this.scroll = options.scroll ? options.scroll : { direction: 1 };
+    this.range = options.range ? options.range : 5; // TODO: range should be odd ?
+
+    this.options.year = options.year ? options.year : _getDefaultYearRange();
+
+    var container = new ContainerSurface({
+      size: [this.width, this.height]
+    });
+    var layout = new SequentialLayout({ direction: 0 });
+
+    // TODO with range
+    var years = _getYDMItems(this.options.year.start, this.options.year.end, 2);
+    var months = _getYDMItems(1, 12, 2);
+    var days = _getYDMItems(1, 31, 2);
+
+    this._year = years[2];
+    this._month = months[2];
+    this._day = days[2];
+
+    this.yearPicker = new Picker(years, this.width/3, this.height, this.range);
+    this.monthPicker = new Picker(months, this.width/3, this.height, this.range);
+    this.dayPicker = new Picker(days, this.width/3, this.height, this.range);
+
+    window.yearPicker = this.yearPicker;
+    window.monthPicker = this.monthPicker;
+    window.dayPicker = this.dayPicker;
+    window.datePicker = this;
+
+    var surfaces = [this.yearPicker, this.monthPicker, this.dayPicker].map(function(picker) {
+      return picker.container;
+    });
+
+    layout.sequenceFrom(surfaces);
+    container.add(new Modifier({
+      size: [this.width, this.height]
+    })).add(layout);
+
+    // setup events
+    // TODO: refactor
+    this.yearPicker.onUpdate(function() {
+      this._year = this.yearPicker.getValue();
+
+      var numOfDays = _getDays(this.yearPicker.getValue(), this.monthPicker.getValue());
+      // TODO: with range
+      this.dayPicker.update(_getYDMItems(1, numOfDays, 2));
+      window.alert('你选择了: ' + this.getDate());
+    }.bind(this));
+
+    this.monthPicker.onUpdate(function() {
+      this._month = this.monthPicker.getValue();
+
+      var numOfDays = _getDays(this.yearPicker.getValue(), this.monthPicker.getValue());
+      // TODO: with range
+      this.dayPicker.update(_getYDMItems(1, numOfDays, 2));
+      window.alert('你选择了: ' + this.getDate());
+    }.bind(this));
+
+    this.dayPicker.onUpdate(function() {
+      this._day = this.dayPicker.getValue();
+      window.alert('你选择了: ' + this.getDate());
+    }.bind(this));
+
+    return container;
+  }
+
+  Datepicker.prototype.constructor = Datepicker;
+
+  Datepicker.Picker = function Picker(selections, width, height, range) {
     var container = new ContainerSurface({
       size: [width, height],
       properties: {
@@ -52,68 +129,63 @@ define(function(require, exports, module) {
       }
     });
 
-    var scroll = new Scrollview({ direction: 1, paginated: true });
+    var scroll = new Scrollview({ direction: 1, paginated: true, margin: 10000 });
 
-    scroll.sequenceFrom(selections.map(function(selection) {
-      // TODO: itemHeight
-      return _selectionItem(selection, width, 30, scroll);
+    this.width = width;
+    this.height = height;
+    this.range = range;
+    this.container = container;
+    this.scroll = scroll;
+    this._value = selections.filter(function(s) {
+      return !!s;
+    })[0];
+
+    this.scroll.sequenceFrom(selections.map(function(selection) {
+      return _selectionItem(selection, width, height / range, scroll);
     }));
-    container.add(scroll);
+    this.container.add(scroll);
 
-    // TODO: update Day for Year & Month
-    // TODO: sometimes the index is not correct
-    scroll.on('pageChange', function() {
-      window.console.log('activeContent: ' + scroll.getActiveContent());
-      window.console.log('===========');
-    });
+    this.scroll.on('pageChange', this.updateValue.bind(this));
 
-    container.scroll = scroll;
-
-    return container;
-  }
+    return this;
+  };
 
   /**
-   * @class Datepicker
-   * @constructor
-   *
+   * register a callback function when updated
+   * @method onUpdate
+   * @param {Function} callback The callback function
    */
-  function Datepicker(options) {
-    this.width = (options.size && options.size.length) ? options.size[0] : 200;
-    this.height = (options.size && options.size.length) ? options.size[1] : 300;
-    this.scroll = options.scroll ? options.scroll : { direction: 1 };
+  Datepicker.Picker.prototype.onUpdate = function onUpdate(callback) {
+    this._callback = callback;
+  };
 
-    var container = new ContainerSurface({
-      size: [this.width, this.height]
-    });
-    var layout = new SequentialLayout({ direction: 0 });
+  Datepicker.Picker.prototype.setValue = function setValue(value) {
+    this._value = value;
+  };
 
-    var years = [null, null, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, null, null];
-    var months = [null, null, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, null, null];
-    var days = [null, null];
+  Datepicker.Picker.prototype.getValue = function getValue() {
+    return this._value;
+  };
 
-    for (var i = 0; i < 31; i++) {
-      days.push(i+1);
+  Datepicker.Picker.prototype.updateValue = function updateValue() {
+    this.setValue(this.scroll.getActiveContent());
+
+    // run callback function if needed
+    if (this._callback && typeof this._callback === 'function') {
+      this._callback();
     }
-    days.push(null);
-    days.push(null);
+  };
 
-    var yearPicker = new Picker(years, this.width/3, this.height);
-    var monthPicker = new Picker(months, this.width/3, this.height);
-    var dayPicker = new Picker(days, this.width/3, this.height);
+  Datepicker.Picker.prototype.update = function update(selections) {
+    this.scroll.sequenceFrom(selections.map(function(selection) {
+      return _selectionItem(selection, this.width, this.height / this.range, this.scroll);
+    }, this));
+  };
 
-    window.yearPicker = yearPicker;
-    window.monthPicker = monthPicker;
-    window.dayPicker = dayPicker;
-
-    layout.sequenceFrom([yearPicker, monthPicker, dayPicker]);
-    container.add(new Modifier({
-      size: [this.width, this.height]
-    })).add(layout);
-
-    return container;
-  }
-
-  Datepicker.prototype.constructor = Datepicker;
+  Datepicker.prototype.getDate = function() {
+    //return [this._year, this._month, this._day].join(',');
+    return this._year + '年' + this._month + '月' + this._day + '日';
+  };
 
   /**
    * @private
@@ -131,6 +203,45 @@ define(function(require, exports, module) {
     });
     s.pipe(scroll);
     return s;
+  }
+
+  /**
+   * Get the number of days in yyyy/mm
+   *
+   * Get the last day of this month, and extract the `day` part
+   *
+   * @private
+   * @return {Number} the number of days
+   *
+   */
+  function _getDays(year, month) {
+    var d = new Date([month<10?'0'+month:month, '01', year].join('/'));
+    if (d.getMonth()>10) d.setFullYear(d.getFullYear()+1);
+    d.setMonth((d.getMonth()+1)%12); // next month
+    d.setDate(0); // back one day
+    return parseInt(d.getDate());
+  }
+
+  function _getDefaultYearRange(range) {
+    if (typeof range !== 'number') range = 10;
+    range = range || 10;
+    var d = parseInt(new Date().getFullYear());
+    return {
+      start: d - range + 1,
+      end: d + range - 1
+    };
+  }
+
+  // return the array of year/month/day
+  function _getYDMItems(start, end, range) {
+    if (start > end) return [];
+    var array = [];
+    for (var i = start; i <= end; i++) array.push(i);
+    for (var j = 0; j < range; j++) {
+      array.unshift(null);
+      array.push(null);
+    }
+    return array;
   }
 
   module.exports = Datepicker;

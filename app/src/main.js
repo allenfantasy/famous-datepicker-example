@@ -11,7 +11,7 @@ define(function(require, exports, module) {
     var mainContext = Engine.createContext();
 
     var datePicker = new Datepicker({
-      size: [200, 150],
+      size: [200, 300],
       scroll: { direction: 1 }
     });
 
