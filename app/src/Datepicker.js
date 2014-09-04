@@ -9,19 +9,7 @@ define(function(require, exports, module) {
     var direction = this.options.direction;
 
     var renderables = this._node._.array;
-    //var parent = renderables[0]._currTarget.parentNode;
-    //var temp = parent.style['-webkit-transform'].split(',');
-    /*var parentOffset = parseInt(temp[temp.length - (direction === 0 ? 4 : 3)].trim());
-    if (parentOffset !== 0) {
-      parentOffset = (Math.floor(Math.abs(parentOffset) / 30) + 1) * -30;
-    }*/
-    //debugger;
-
     var offsets = renderables.map(function(r, index, array) {
-      window.console.log(index);
-      window.console.dir(r);
-      //return r._matrix[direction === 0 ? 12 : 13] + (parentOffset ? -30: 0);
-      //return r._matrix[direction === 0 ? 12 : 13] + parentOffset;
       return r._matrix[direction === 0 ? 12 : 13];
     });
 
@@ -36,9 +24,10 @@ define(function(require, exports, module) {
     return index;
   };
 
-  Scrollview.prototype.getActiveContent = function() {
+  Scrollview.prototype.getActiveContent = function(offset) {
+    window.console.log(offset);
     var index = this.getActiveIndex();
-    return this._node._.array[index + 2].getContent();
+    return this._node._.array[index + offset].getContent();
   };
 
   /**
@@ -55,7 +44,10 @@ define(function(require, exports, module) {
     this.width = (options.size && options.size.length) ? options.size[0] : 200;
     this.height = (options.size && options.size.length) ? options.size[1] : 300;
     this.scroll = options.scroll ? options.scroll : { direction: 1 };
-    this.range = options.range ? options.range : 5; // TODO: range should be odd ?
+    this.range = options.range ? options.range : 5;
+    if (typeof this.range !== 'number' || this.range % 2 !== 1) this.range = 5; // force to default value when invalid
+
+    this.gap = (this.range - 1) / 2;
 
     this.options.year = options.year ? options.year : _getDefaultYearRange();
 
@@ -64,14 +56,13 @@ define(function(require, exports, module) {
     });
     var layout = new SequentialLayout({ direction: 0 });
 
-    // TODO with range
-    var years = _getYDMItems(this.options.year.start, this.options.year.end, 2);
-    var months = _getYDMItems(1, 12, 2);
-    var days = _getYDMItems(1, 31, 2);
+    var years = _getYDMItems(this.options.year.start, this.options.year.end, this.gap);
+    var months = _getYDMItems(1, 12, this.gap);
+    var days = _getYDMItems(1, 31, this.gap);
 
-    this._year = years[2];
-    this._month = months[2];
-    this._day = days[2];
+    this._year = years[this.gap];
+    this._month = months[this.gap];
+    this._day = days[this.gap];
 
     this.yearPicker = new Picker(years, this.width/3, this.height, this.range);
     this.monthPicker = new Picker(months, this.width/3, this.height, this.range);
@@ -97,8 +88,7 @@ define(function(require, exports, module) {
       this._year = this.yearPicker.getValue();
 
       var numOfDays = _getDays(this.yearPicker.getValue(), this.monthPicker.getValue());
-      // TODO: with range
-      this.dayPicker.update(_getYDMItems(1, numOfDays, 2));
+      this.dayPicker.update(_getYDMItems(1, numOfDays, this.gap));
       window.alert('你选择了: ' + this.getDate());
     }.bind(this));
 
@@ -106,8 +96,7 @@ define(function(require, exports, module) {
       this._month = this.monthPicker.getValue();
 
       var numOfDays = _getDays(this.yearPicker.getValue(), this.monthPicker.getValue());
-      // TODO: with range
-      this.dayPicker.update(_getYDMItems(1, numOfDays, 2));
+      this.dayPicker.update(_getYDMItems(1, numOfDays, this.gap));
       window.alert('你选择了: ' + this.getDate());
     }.bind(this));
 
@@ -131,9 +120,11 @@ define(function(require, exports, module) {
 
     var scroll = new Scrollview({ direction: 1, paginated: true, margin: 10000 });
 
+    // TODO: options manager
     this.width = width;
     this.height = height;
     this.range = range;
+    this.gap = (this.range - 1) / 2;
     this.container = container;
     this.scroll = scroll;
     this._value = selections.filter(function(s) {
@@ -168,7 +159,7 @@ define(function(require, exports, module) {
   };
 
   Datepicker.Picker.prototype.updateValue = function updateValue() {
-    this.setValue(this.scroll.getActiveContent());
+    this.setValue(this.scroll.getActiveContent(this.gap));
 
     // run callback function if needed
     if (this._callback && typeof this._callback === 'function') {
@@ -183,14 +174,14 @@ define(function(require, exports, module) {
   };
 
   Datepicker.prototype.getDate = function() {
-    //return [this._year, this._month, this._day].join(',');
     return this._year + '年' + this._month + '月' + this._day + '日';
   };
 
   /**
    * @private
-   *
    * @param {String} content
+   * @return {Surface} a Surface conveys the content
+   *
    */
   function _selectionItem(content, width, height, scroll) {
     var s = new Surface({
