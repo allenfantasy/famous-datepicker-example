@@ -1,14 +1,14 @@
 define(function(require, exports, module) {
   var Surface = require('famous/core/Surface');
+  var EventHandler = require('famous/core/EventHandler');
   var Modifier = require('famous/core/Modifier');
   var Scrollview = require('famous/views/Scrollview');
   var SequentialLayout = require('famous/views/SequentialLayout');
   var ContainerSurface = require('famous/surfaces/ContainerSurface');
-  var Picker = require('./Picker');
+  var Slot = require('./Slot');
   var Model = require('./NaiveModel');
 
-  // TODO: options manager for Datepicker & Picker
-  // TODO: UI Interface
+  // TODO: options manager for Datepicker & Slot
 
   Scrollview.prototype.getActiveIndex = function() {
     var direction = this.options.direction;
@@ -34,6 +34,7 @@ define(function(require, exports, module) {
     return this._node._.array[index + offset].getContent();
   };
 
+  //TODO: doc
   /**
    * @class Datepicker
    * @constructor
@@ -42,10 +43,15 @@ define(function(require, exports, module) {
   function Datepicker(options) {
     this.options = {};
 
+    this._eventOutput = new EventHandler();
+    this._eventOutput.bindThis(this);
+
+    //TODO: deal with 'undefined'
     this.width = (options.size && options.size.length) ? options.size[0] : 200;
     this.height = (options.size && options.size.length) ? options.size[1] : 300;
     this.scroll = options.scroll ? options.scroll : { direction: 1 };
     this.range = options.range ? options.range : 5;
+    this.fontSize = options.fontSize ? options.fontSize : 16;
     if (typeof this.range !== 'number' || this.range % 2 !== 1) this.range = 5; // force to default value when invalid
 
     this.gap = (this.range - 1) / 2;
@@ -63,40 +69,39 @@ define(function(require, exports, module) {
       day: data.days[this.gap]
     });
 
-    this._pickers = {};
+    this._slots = {};
     this._model.getKeys().forEach(function(key) {
-      this._pickers[key] = new Picker(data[key + 's'], this.width/3, this.height, this.range);
+      this._slots[key] = new Slot(data[key + 's'], this.width/3, this.height, this.range);
     }, this);
 
     var container = new ContainerSurface({
       size: [this.width, this.height],
       properties: {
-        background: '-webkit-radial-gradient(50%, ' + this.width + 'px ' + (this.height/this.range) + 'px' + ', white 50%, #eee 70%, #ccc 95%)'
+        fontSize: this.fontSize + 'px'
       }
     });
     var layout = new SequentialLayout({ direction: 0 });
 
     var mask = new Surface({
-      size: [this.width, this.height/this.range],
-      properties: {
-        border: '1px solid #ccc'
-      }
+      size: [this.width, this.height],
+      classes: ['dp-mask']
     });
 
-    var surfaces = Object.keys(this._pickers).map(function(key) {
-      return this._pickers[key];
-    }, this).map(function(picker) {
-      return picker.container;
+    var surfaces = Object.keys(this._slots).map(function(key) {
+      return this._slots[key];
+    }, this).map(function(slot) {
+      return slot.container;
     });
 
     layout.sequenceFrom(surfaces);
     container.add(new Modifier({
-      size: [this.width, this.height]
-    })).add(layout);
-    container.add(new Modifier({
       origin: [.5, .5],
       align: [.5, .5]
     })).add(mask);
+    container.add(new Modifier({
+      size: [this.width, this.height]
+    })).add(layout);
+    mask.pipe(layout);
 
     this._setupEvent();
 
@@ -111,14 +116,22 @@ define(function(require, exports, module) {
 
   Datepicker.prototype._setupEvent = function _setupEvent() {
     // setup events
-    Object.keys(this._pickers).forEach(function(key) {
-      var picker = this._pickers[key];
-      picker.on('change', function() {
-        this._model.set(key, picker.getValue());
-        if (key !== 'day') {
-          this._pickers.day.update(_getYDMItems(1, this._getDays(), this.gap));
-        }
-        window.console.log('你选择了: ' + this.getDate());
+    Object.keys(this._slots).forEach(function(key) {
+      var slot = this._slots[key];
+      slot.on('change', function() {
+        this._model.set(key, slot.getValue());
+        // TODO: update day slot
+        /*if (key !== 'day') {
+          /*var lastDayIndex = this._getDays() - 1 + this.gap;
+          var days = this._getDays()
+          var daySlot = this._slots.day;
+          var dayItems = daySlot.scroll._node._.array;
+          var val;
+          for (var i = 0; i < 31; i++) {
+            val = (i+1<=days) ? i+1 : null;
+            dayItems[i + this.gap].setContent(val);
+          }
+        }*/
       }, this);
     }, this);
   };
@@ -133,8 +146,8 @@ define(function(require, exports, module) {
    *
    */
   Datepicker.prototype._getDays = function _getDays() {
-    var year = this._pickers.year.getValue();
-    var month = this._pickers.month.getValue();
+    var year = this._slots.year.getValue();
+    var month = this._slots.month.getValue();
 
     var d = new Date([month<10?'0'+month:month, '01', year].join('/'));
     if (d.getMonth()>10) d.setFullYear(d.getFullYear()+1);

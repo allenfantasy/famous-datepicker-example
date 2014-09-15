@@ -1,0 +1,5 @@
+.dp-mask {
+  border-width: 16px;
+  -webkit-border-image: url(../content/images/background.png) 16 16 stretch;
+  z-index: -100;
+}
