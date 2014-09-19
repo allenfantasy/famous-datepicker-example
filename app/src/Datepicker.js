@@ -20,12 +20,11 @@ define(function(require, exports, module) {
 
     var index;
     var minOffset = Infinity;
-    for (var i = 0; i < offsets.length; i++) {
+    for (var i = 0; i < offsets.length; i++)
       if (Math.abs(offsets[i]) < minOffset) {
         minOffset = Math.abs(offsets[i]);
         index = i;
       }
-    }
     return index;
   };
 
@@ -120,18 +119,19 @@ define(function(require, exports, module) {
       var slot = this._slots[key];
       slot.on('change', function() {
         this._model.set(key, slot.getValue());
-        // TODO: update day slot
-        /*if (key !== 'day') {
-          /*var lastDayIndex = this._getDays() - 1 + this.gap;
-          var days = this._getDays()
+        // TODO: some buggy date should be prevented when pressing submit
+        if (key !== 'day') {
           var daySlot = this._slots.day;
-          var dayItems = daySlot.scroll._node._.array;
-          var val;
-          for (var i = 0; i < 31; i++) {
-            val = (i+1<=days) ? i+1 : null;
-            dayItems[i + this.gap].setContent(val);
-          }
-        }*/
+          var targetDays = this._getDays(); // the target amount of days
+          var currentDays = daySlot.getItemCount();
+
+          if (targetDays > currentDays)
+            daySlot.addItems(currentDays + 1, targetDays);
+          else if (targetDays < currentDays)
+            daySlot.removeItems(targetDays + 1, currentDays);
+          else
+            return;
+        }
       }, this);
     }, this);
   };

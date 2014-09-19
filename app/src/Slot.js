@@ -34,10 +34,11 @@ define(function(require, exports, module) {
     this._model = new Model({
       value: this._defaultValue
     });
-
-    this.scroll.sequenceFrom(selections.map(function(selection) {
+    this._innerItems = selections.map(function(selection) {
       return _selectionItem(selection, width, height / range, scroll);
-    }));
+    });
+
+    this.scroll.sequenceFrom(this._innerItems);
     this.container.add(scroll);
 
     this.scroll.on('pageChange', this.updateValue.bind(this));
@@ -68,6 +69,44 @@ define(function(require, exports, module) {
     this.setValue(this.scroll.getActiveContent(this.gap));
   };
 
+  Slot.prototype.addItems = function addItems(start, end) {
+    if (!start) return;
+    end = end || start;
+    var days = [];
+    var i;
+    for (i = start; i <= end; i++) days.push(i);
+
+    days = days.filter(function(day) {
+      return !itemExists(day, this);
+    }, this);
+    var items = days.map(function(day) {
+      return _selectionItem(day, this.width, this.height/this.range, this.scroll);
+    }, this);
+
+    var index = days[0] + this.gap - 1;
+    Array.prototype.splice.apply(this._innerItems, [index, 0].concat(items));
+  };
+
+  Slot.prototype.removeItems = function removeItems(start, end) {
+    if (!start) return;
+    end = end || start;
+    var days = [];
+    var i;
+    for (i = start; i <= end; i++) days.push(i);
+
+    days.forEach(function(day) {
+      // remove the first existing item
+      var index = this._innerItems.map(function(item) {
+        return item.getContent();
+      }).indexOf(day);
+
+      if (index > -1) this._innerItems.splice(index, 1);
+    }, this);
+  };
+  Slot.prototype.getItemCount = function getItemCount() {
+    return this._innerItems.length - this.gap * 2;
+  };
+
   /**
    * @private
    * @param {String} content
@@ -85,6 +124,12 @@ define(function(require, exports, module) {
     });
     s.pipe(scroll);
     return s;
+  }
+
+  function itemExists(day, thisObj) {
+    return thisObj._innerItems.some(function(item) {
+      return item.getContent() === day;
+    });
   }
 
   module.exports = Slot;
