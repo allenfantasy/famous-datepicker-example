@@ -1,8 +1,9 @@
 define(function(require, exports, module) {
   var Surface = require('famous/core/Surface');
   var ContainerSurface = require('famous/surfaces/ContainerSurface');
-  var Scrollview = require('famous/views/Scrollview');
-  var Model = require('./NaiveModel');
+  var Timer = require('famous/utilities/Timer');
+  var Model = require('./helpers/NaiveModel');
+  var Scrollview = require('./helpers/MyScrollview');
 
   function Slot(selections, width, height, range) {
     var container = new ContainerSurface({
@@ -16,10 +17,11 @@ define(function(require, exports, module) {
       direction: 1,
       paginated: true,
       margin: 10000,
-      pageStopSpeed: 1,
-      pagePeriod: 1000,
-      pageDamp: 0.9,
-      pageSwitchSpeed: 1
+      pageStopSpeed: 1.5,
+      pageDamp: 1,
+      pageSwitchSpeed: 0.1
+      /*pagePeriod: 1000,
+      pageSwitchSpeed: 0.1*/
     });
 
     this.width = width;
@@ -41,7 +43,11 @@ define(function(require, exports, module) {
     this.scroll.sequenceFrom(this._innerItems);
     this.container.add(scroll);
 
-    this.scroll.on('pageChange', this.updateValue.bind(this));
+    this.scroll.on('pageChange', function() {
+      Timer.after(function() {
+        this.updateValue();
+      }.bind(this), 30);
+    }.bind(this));
 
     return this;
   }
@@ -62,12 +68,12 @@ define(function(require, exports, module) {
   };
 
   Slot.prototype.getValue = function getValue() {
+    this.setValue(this.scroll.getActiveContent(this.gap));
+    //console.log('get value: ' + this._model.get('value'));
     return this._model.get('value');
   };
 
-  Slot.prototype.updateValue = function updateValue() {
-    this.setValue(this.scroll.getActiveContent(this.gap));
-  };
+  Slot.prototype.updateValue = Slot.prototype.getValue; // alias
 
   Slot.prototype.addItems = function addItems(start, end) {
     if (!start) return;

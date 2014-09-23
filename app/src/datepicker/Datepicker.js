@@ -1,49 +1,23 @@
 define(function(require, exports, module) {
   var Surface = require('famous/core/Surface');
-  var EventHandler = require('famous/core/EventHandler');
   var Modifier = require('famous/core/Modifier');
-  var Scrollview = require('famous/views/Scrollview');
+  var View = require('famous/core/View');
   var SequentialLayout = require('famous/views/SequentialLayout');
   var ContainerSurface = require('famous/surfaces/ContainerSurface');
   var Slot = require('./Slot');
-  var Model = require('./NaiveModel');
+  var Model = require('./helpers/NaiveModel');
 
   // TODO: options manager for Datepicker & Slot
-
-  Scrollview.prototype.getActiveIndex = function() {
-    var direction = this.options.direction;
-
-    var renderables = this._node._.array;
-    var offsets = renderables.map(function(r, index, array) {
-      return r._matrix[direction === 0 ? 12 : 13];
-    });
-
-    var index;
-    var minOffset = Infinity;
-    for (var i = 0; i < offsets.length; i++)
-      if (Math.abs(offsets[i]) < minOffset) {
-        minOffset = Math.abs(offsets[i]);
-        index = i;
-      }
-    return index;
-  };
-
-  Scrollview.prototype.getActiveContent = function(offset) {
-    var index = this.getActiveIndex();
-    return this._node._.array[index + offset].getContent();
-  };
-
-  //TODO: doc
+  // TODO: doc
   /**
    * @class Datepicker
    * @constructor
    *
    */
   function Datepicker(options) {
-    this.options = {};
+    View.apply(this, arguments);
 
-    this._eventOutput = new EventHandler();
-    this._eventOutput.bindThis(this);
+    this.options = {};
 
     //TODO: deal with 'undefined'
     this.width = (options.size && options.size.length) ? options.size[0] : 200;
@@ -104,13 +78,18 @@ define(function(require, exports, module) {
 
     this._setupEvent();
 
-    return container;
+    this.add(container);
+    return this;
   }
 
+  Datepicker.prototype = Object.create(View.prototype);
   Datepicker.prototype.constructor = Datepicker;
 
   Datepicker.prototype.getDate = function() {
-    return this._model.get('year') + '年' + this._model.get('month') + '月' + this._model.get('day') + '日';
+    this._model.set('year', this._slots.year.getValue());
+    this._model.set('month', this._slots.month.getValue());
+    this._model.set('day', this._slots.day.getValue());
+    return this._model.get('year') + '-' + this._model.get('month') + '-' + this._model.get('day');
   };
 
   Datepicker.prototype._setupEvent = function _setupEvent() {
