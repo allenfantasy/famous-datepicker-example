@@ -490,12 +490,21 @@ define(function(require, exports, module) {
       var direction = this.options.direction;
 
       var renderables = this._node._.array;
-      var offsets = renderables.map(function(r, index, array) {
-        return r._matrix[direction === 0 ? 12 : 13];
-      });
-      var matrics = renderables[0]._currTarget.parentNode.style['-webkit-transform'].split(',');
-      var parentOffset = parseInt(matrics[matrics.length - (direction === 0 ? 4 : 3)].trim());
 
+      // pivot is a 'fake' active item which is always in the scope of `margin`
+      var pivot = renderables[this._node.index];
+      var itemHeight = pivot.getSize()[direction];
+      var matrics = pivot._currTarget.parentNode.style['-webkit-transform'].split(',');
+      var parentOffset = parseInt(matrics[matrics.length - (direction === 0 ? 4 : 3)].trim());
+      var pivotOffset = pivot._matrix[direction===0?12:13];
+      var pIndex = this._node.index;
+
+      var offsets = renderables.map(function(r, index, array) {
+        return pivotOffset + (index - pIndex) * itemHeight;
+        //return r._matrix[direction === 0 ? 12 : 13];
+      });
+
+      // the active index's offset should be 0
       var index;
       var minOffset = Infinity;
       for (var i = 0; i < offsets.length; i++)
@@ -503,7 +512,8 @@ define(function(require, exports, module) {
           minOffset = Math.abs(offsets[i]);
           index = i;
         }
-      var itemHeight = renderables[0].getSize()[1];
+
+      // overcome some bug in Famo.us Scrollview: parentOffset
       if (Math.abs(parentOffset) > 1/2 * itemHeight) {
         index += 1;
       }
@@ -513,7 +523,11 @@ define(function(require, exports, module) {
 
     MyScrollview.prototype.getActiveContent = function(offset) {
       var index = this.getActiveIndex();
-      return this._node._.array[index + (offset?offset:0)].getContent();
+      var renderable = this._node._.array[index + (offset?offset:0)];
+      var content = renderable.getContent();
+      if (content instanceof DocumentFragment)
+        content = renderable._currTarget.innerText; 
+      return content; 
     };
 
     module.exports = MyScrollview;

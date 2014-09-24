@@ -16,10 +16,11 @@ define(function(require, exports, module) {
     var scroll = new Scrollview({
       direction: 1,
       paginated: true,
-      margin: 10000,
-      pageStopSpeed: 1.5,
+      margin: 300,
+      pageStopSpeed: 1,
       pageDamp: 1,
-      pageSwitchSpeed: 0.1
+      pageSwitchSpeed: 0.1,
+      friction: 0.0005
       /*pagePeriod: 1000,
       pageSwitchSpeed: 0.1*/
     });

@@ -12,13 +12,19 @@ define(function(require, exports, module) {
   function DatepickerView() {
     View.apply(this, arguments);
 
+    var datePickerHeight = window.innerHeight/2 - BAR_HEIGHT;
+
     this.container = new ContainerSurface();
 
     this.datePicker = new Datepicker({
-      size: [window.innerWidth, window.innerHeight - BAR_HEIGHT],
+      size: [window.innerWidth, datePickerHeight],
       scroll: { direction: 1 },
+      range: 3,
       fontSize: 20
     });
+
+    window.datePicker = this.datePicker;
+
     var bar = _createBar.call(this);
 
     this.container.add(new Modifier({
@@ -26,9 +32,9 @@ define(function(require, exports, module) {
       align: [0.5, 1]
     })).add(this.datePicker);
     this.container.add(new Modifier({
-      origin: [0.5, 0],
-      align: [0.5, 0],
-      transform: Transform.translate(0, 0, 0)
+      origin: [0.5, 1],
+      align: [0.5, 1],
+      transform: Transform.translate(0, -datePickerHeight, 0)
     })).add(bar);
 
     this.add(this.container);
