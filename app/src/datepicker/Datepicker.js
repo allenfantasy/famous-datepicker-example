@@ -76,7 +76,7 @@ define(function(require, exports, module) {
     })).add(layout);
     mask.pipe(layout);
 
-    this._setupEvent();
+    _setupEvent.call(this);
 
     this.add(container);
     return this;
@@ -92,7 +92,7 @@ define(function(require, exports, module) {
     return this._model.get('year') + '-' + this._model.get('month') + '-' + this._model.get('day');
   };
 
-  Datepicker.prototype._setupEvent = function _setupEvent() {
+  function _setupEvent() {
     // setup events
     Object.keys(this._slots).forEach(function(key) {
       var slot = this._slots[key];

@@ -13,24 +13,23 @@ define(function(require, exports, module) {
       }
     });
 
-    var scroll = new Scrollview({
-      direction: 1,
-      paginated: true,
-      margin: 300,
-      pageStopSpeed: 1,
-      pageDamp: 1,
-      pageSwitchSpeed: 0.1,
-      friction: 0.0005
-      /*pagePeriod: 1000,
-      pageSwitchSpeed: 0.1*/
-    });
-
     this.width = width;
     this.height = height;
     this.range = range;
+    this.itemHeight = this.height / this.range;
     this.gap = (this.range - 1) / 2;
     this.container = container;
-    this.scroll = scroll;
+    this.scroll = new Scrollview({
+      direction: 1,
+      paginated: true,
+      margin: this.itemHeight,
+      pageStopSpeed: 1,
+      //pagePeriod: 1000,
+      pageDamp: 1,
+      pageSwitchSpeed: 0.1,
+      friction: 0.0005,
+      drag: 0.00005
+    });
     this._defaultValue = selections.filter(function(s) {
       return !!s;
     })[0];
@@ -38,11 +37,11 @@ define(function(require, exports, module) {
       value: this._defaultValue
     });
     this._innerItems = selections.map(function(selection) {
-      return _selectionItem(selection, width, height / range, scroll);
-    });
+      return _selectionItem(selection, width, this.itemHeight, this.scroll);
+    }, this);
 
     this.scroll.sequenceFrom(this._innerItems);
-    this.container.add(scroll);
+    this.container.add(this.scroll);
 
     this.scroll.on('pageChange', function() {
       Timer.after(function() {

@@ -522,6 +522,7 @@ define(function(require, exports, module) {
     };
 
     MyScrollview.prototype.getActiveContent = function(offset) {
+      // TODO: a tricky bug here
       var index = this.getActiveIndex();
       var renderable = this._node._.array[index + (offset?offset:0)];
       var content = renderable.getContent();
