@@ -1,7 +1,7 @@
 {
   "name": "famous-datepicker",
   "description": "Datepicker for Famo.us.",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "homepage": "https://github.com/allenfantasy/famous-datepicker",
   "authors": [{
     "name": "Allen Wu",
@@ -12,10 +12,11 @@
     "amd"
   ],
   "keywords": [
-    "famo.us"
+    "famo.us",
+    "datepicker"
   ],
   "license": "ISC",
-  "private": true,
+  "private": false,
   "ignore": [
     "**/.*",
     "node_modules",
