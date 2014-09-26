@@ -1,9 +1,0 @@
-.dp-mask {
-  border-width: 16px;
-  -webkit-border-image: url(../content/images/background.png) 16 16 stretch;
-  z-index: -100;
-}
-.dp-bar {
-  background: url(../content/images/bar.png) 0 0 repeat-x;
-  opacity: 0.9;
-}
