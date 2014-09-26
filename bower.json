@@ -1,0 +1,34 @@
+{
+  "name": "famous-datepicker",
+  "description": "Datepicker for Famo.us.",
+  "version": "0.0.1",
+  "homepage": "https://github.com/allenfantasy/famous-datepicker",
+  "authors": [{
+    "name": "Allen Wu",
+    "url": "http://github.com/allenfantasy/"
+  }],
+  "main": "app/index.html",
+  "moduleType": [
+    "amd"
+  ],
+  "keywords": [
+    "famo.us",
+    "datepicker"
+  ],
+  "license": "ISC",
+  "private": false,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "src/lib",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "requirejs": "~2.1.11",
+    "almond": "~0.2.9",
+    "famous-polyfills": "git+https://github.com/Famous/polyfills.git#0.1.1",
+    "famous": "~0.2.2",
+    "famous-datepicker": "~0.0.1"
+  }
+}
