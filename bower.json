@@ -29,6 +29,6 @@
     "almond": "~0.2.9",
     "famous-polyfills": "git+https://github.com/Famous/polyfills.git#0.1.1",
     "famous": "~0.2.2",
-    "famous-datepicker": "~0.0.1"
+    "famous-datepicker": "~0.0.2"
   }
 }

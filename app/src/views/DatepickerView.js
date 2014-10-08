@@ -7,7 +7,7 @@ define(function(require, exports, module) {
   var ContainerSurface = require('famous/surfaces/ContainerSurface');
   var Datepicker = require('famous-datepicker/Datepicker');
 
-  var BAR_HEIGHT = 45;
+  var BAR_HEIGHT = 44;
 
   function DatepickerView() {
     View.apply(this, arguments);

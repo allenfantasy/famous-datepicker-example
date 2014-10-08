@@ -13,8 +13,11 @@ define(function(require, exports, module) {
 
   var state = new Transitionable(0);
 
-  var appView = new AppView();
+  var color = '#627699';
+
+  var appView = new AppView(color);
   var datepickerView = new DatepickerView();
+  var toggler = require('views/togglerView');
 
   // datepicker mask
   mainContext.add(new Modifier({
@@ -32,6 +35,15 @@ define(function(require, exports, module) {
     }
   })).add(appView);
 
+  // toggler
+  mainContext.add(new Modifier({
+    origin: [0.5, 0],
+    align: [0.5, 0],
+    transform: function() {
+      return Transform.translate(-state.get()*window.innerWidth, 10, 0);
+    }
+  })).add(toggler);
+
   // events
   appView.input.on('click', function() {
     state.set(1, { duration: 1000, curve: 'easeIn' });
@@ -45,6 +57,12 @@ define(function(require, exports, module) {
 
   datepickerView.on('cancel', function() {
     state.set(0, { duration: 1000, curve: 'easeOut' });
+  });
+
+  toggler.submit.on('click', function() {
+    var startYear = parseInt(toggler.getStartYear());
+    var endYear = parseInt(toggler.getEndYear());
+    datepickerView.datePicker.setYears(startYear, endYear);
   });
 
 });
